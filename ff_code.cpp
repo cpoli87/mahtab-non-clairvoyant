@@ -3358,8 +3358,8 @@ void run_shahin_experiment_dimensional() {
     Ts.push_back(100000);
     std::vector<std::vector<int> > Es;
 
-    //Es.push_back(std::vector<int>(1, 1000));
-    //Es.push_back(std::vector<int>(2, 1000));
+    Es.push_back(std::vector<int>(1, 1000));
+    Es.push_back(std::vector<int>(2, 1000));
     Es.push_back(std::vector<int>(5,1000));
     int nEs = Es.size();
     // for (int k = 0; k < nEs; k++) {
@@ -3395,8 +3395,8 @@ void run_shahin_experiment_dimensional() {
     // algs_array.push_back("Greedy_dimensional");
     //algs_array.push_back("MTF_dimensional");
     //algs_array.push_back("BIT");
-    //algs_array.push_back("DepartureStrategy");
-    algs_array.push_back("HybridAlgorithm");
+    algs_array.push_back("DepartureStrategy");
+    // algs_array.push_back("HybridAlgorithm");
 
 
     get_ratios_dimensional(Ts, Es, n, vector<int>(mus, mus+sizeof(mus)/ sizeof(int)), num_trials, algs_array);
