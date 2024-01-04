@@ -2411,6 +2411,108 @@ class HybridAlgorithm {
 
 };
 
+
+class Duration {
+
+    public:
+        // Duration(int _capacity, int mu, int _intervals_duration);
+        
+        vector<int> capacity;
+        int mu;
+        int intervals_duration;
+        std::vector<std::tuple<int, int>> _intervals;
+        std::map<std::tuple<int, int>, std::vector<Job_dimensional> > mapJobs;
+        std::map<std::tuple<int, int>, FirstFit_dimensional*> mapFirstFits;
+
+    Duration(const std::vector<int>& _capacity, int _mu, int _intervals_duration): capacity(_capacity), mu(_mu), intervals_duration(_intervals_duration) {
+        _intervals = divide_mu_into_intervals(mu, intervals_duration);
+    }
+
+    std::vector<std::tuple<int, int>> divide_mu_into_intervals(int mu, int interval_duration) {
+        // Calculate the number of intervals
+        //long long num_intervals = total_span / interval_length;
+        //std::cout<<"mu:"<< mu<<std::endl;
+        //exit(0);
+        long long num_intervals = ceil(log(mu) / log(interval_duration)) + 1;; 
+        //std::cout<<"num_intervals: "<< num_intervals<<std::endl;
+        
+
+        // Initialize a vector to store the intervals
+        std::vector<std::tuple<int, int>> intervals;
+
+        // Determine the boundaries of each interval
+        for (int i = 0; i <= num_intervals; ++i) {
+            int lower_boundary = pow(interval_duration, (i-1));
+            int upper_boundary = pow(interval_duration, i);
+            intervals.push_back(std::make_tuple(lower_boundary, upper_boundary));
+            //std::cout<< "left_interval:"<< lower_boundary <<std::endl;
+            //std::cout<< "right_interval:"<< upper_boundary <<std::endl; 
+        }
+
+        // for (int j = 0; j< intervals.size(); j++){
+        //     std::cout<< "intervals: (" << std::get<0>(intervals[j]) << ", " << std::get<1>(intervals[j]) << ")" << std::endl;
+        // }
+
+    
+        return intervals;
+    }
+
+    void addJob(Job_dimensional& j) {
+        long long job_duration = j.end - j.start;
+        // Calculate the interval for the job based on its finishing time
+        for (const auto& interval : _intervals) {
+
+            if (job_duration >= std::get<0>(interval) && job_duration < std::get<1>(interval)) {
+                // Add the job to mapJobs with the interval as the key
+                mapJobs[interval].push_back(j);
+
+                // Check the map for the same interval in mapFirstFits
+                if (mapFirstFits.count(interval) == 0) {
+                    // If the interval does not exist in mapFirstFits, create a new FirstFit instance for it
+                    mapFirstFits[interval] = new FirstFit_dimensional(capacity);
+                }
+
+                // Add the job to the corresponding FirstFit instance
+                mapFirstFits[interval]->add_job(j);
+
+
+                // Print the contents of mapJobs after adding the job
+                // std::cout << "Contents of mapJobs after adding the job:" << std::endl;
+                // for (const auto& entry : mapJobs) {
+                //     const std::tuple<int, int>& interval = entry.first;
+                //     const std::vector<Job>& jobs = entry.second;
+
+                //     int lower_boundary = std::get<0>(interval);
+                //     int upper_boundary = std::get<1>(interval);
+
+                //     std::cout << "Interval: (" << lower_boundary << ", " << upper_boundary << "):" << std::endl;
+
+                //     for (const Job& job : jobs) {
+                //         std::cout << "  Job size: " << job.size << " Start: " << job.start << " End: " << job.end << std::endl;
+                //     }
+                // }
+
+                break; // Break the loop after adding to the correct interval.
+            }
+        }
+    }
+
+    long long getCost()
+    {
+        long long total_cost = 0;
+
+        for (const auto& pair : mapFirstFits)
+        {
+            if (pair.second) {
+                long long cost = pair.second->cost();
+                total_cost += cost;
+            }
+        }
+
+        return total_cost;
+    }
+};
+
 // void test_server() {
 //     int capacity = 100;
 //     Job j1(10, 40, 40);
@@ -3217,6 +3319,7 @@ void get_ratios_dimensional(vector<int> Ts, std::vector<std::vector<int> > Es, i
     int nT = Ts.size();
     int nMus = mus.size();
     int nEs = Es.size();
+    
     for (int k = 0; k < nEs; k++) {
         vector<int> E = Es[k];
         for (const std::string& className : algs_array) {
@@ -3333,7 +3436,13 @@ void get_ratios_dimensional(vector<int> Ts, std::vector<std::vector<int> > Es, i
                             }
                             rho2 += (double) ff.getCost() * 1000 / ((long long) cost_opt);
                         }                  
-                    
+                        else if (className == "Duration") {
+                            Duration ff(E, mu, 2);
+                            for (auto it = jobs.begin(); it != jobs.end(); it++) {
+                                ff.addJob(*it);
+                            }
+                            rho2 += (double) ff.getCost() * 1000 / ((long long) cost_opt);
+                        }
                         else {
                             std::cout << "Invalid algorithm class name: " << className << std::endl;
                             continue;
@@ -3395,7 +3504,8 @@ void run_shahin_experiment_dimensional() {
     // algs_array.push_back("Greedy_dimensional");
     //algs_array.push_back("MTF_dimensional");
     //algs_array.push_back("BIT");
-    algs_array.push_back("DepartureStrategy");
+    // algs_array.push_back("DepartureStrategy");
+    algs_array.push_back("Duration");
     // algs_array.push_back("HybridAlgorithm");
 
 
